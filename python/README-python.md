@@ -28,7 +28,7 @@ from load_save import load_data
 from main import analyze_FRET_data
 
 DATA_DIR = r'../example'
-EXP_DIR = r'../example/gauss_noise_estimated_G'
+EXP_DIR = r'../example/gauss_noise/sinusoids'
 	
 def run():
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
 For a given estimation, the general structure will remain as such. In particular, for the multiprocessing aspects of the code to function properly, the script guard  `if __name == '__main':run()` must be present at the end of the script, and all code to be executed must be in the function `run()` . 
 
-For most estimations, the user will only need to change `DATA_DIR` to the directory where  the measured input data (see **Input data** section below) is stored and `EXP_DIR` to the directory where the estimation specifications and models (see **Analysis parameters** and **Model functions** sections below) and output data is to be stored. These two directories are currently set to the `example/` directory and the `example/gauss_noise_estimated_G` directory, respectively, within this repository.
+For most estimations, the user will only need to change `DATA_DIR` to the directory where  the measured input data (see **Input data** section below) is stored and `EXP_DIR` to the directory where the estimation specifications and models (see **Analysis parameters** and **Model functions** sections below) and output data is to be stored.
 
 
 
