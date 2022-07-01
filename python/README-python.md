@@ -78,12 +78,21 @@ class anl_params():
 	
 		a.process_noise = 'Gaussian'
 		a.state_est_all_cores = True
-		a.G_estimation = True
+	
+    if a.process_noise == 'Non-Gaussian':
+        a.Q_tilde_prior_modes = [100, 1]
+        a.Q_tilde_prior_FC = [30, 10]
+        a.state_est_method = 'integrate'
+        a.chi_interval_width = 8
+        a.chi_num_of_subintervals = 400
+	else:
+        a.sigma_chi_prior_FC = 30
+        a.sigma_chi_prior_mode = 100
 		
-		# list further attributes below...
+	# list further attributes below...
 ```
 
-This module is placed in the `EXP_DIR` folder defined above in the main run script.  See the example in the `example/gauss_noise_estimated_G` directory for the general structure. 
+This module is placed in the `EXP_DIR` folder defined above in the main run script.  See the example in the `example/gauss_noise/steps` directory for the general structure. 
 
 The full list of attributes that one can set are:
 
@@ -96,13 +105,13 @@ The full list of attributes that one can set are:
    a.sigma_chi_prior_mode = 100
    ```
 
-   
+
 
    **If non-Gaussian process noise is used**, then the following procedures should be taken:
 
-   A. The distribution of the noise, which we call *Q_tilde*, is defined in the model functions (see the **Model functions** section for how to do this). 
+   A. The distribution of the noise, which we call *Q_tilde*, is defined as a subclass in the model class (see the **Model functions** section for how to do this). 
 
-   B. The parameters of *Q_tilde* must themselves be estimated, and each is assumed lognormal. For example, if *Q_tilde* is a mean-zero generalized Student's t-distribution, then it is parameterized by *sigma* and *nu*. We must define the lognormals for each of these, by their mode and fold-change:
+   B. The parameters of *Q_tilde* must themselves be estimated, and each is assumed lognormal. For example, if *Q_tilde* is a mean-zero generalized Student's t-distribution, then it is parameterized by hyperparameters *sigma* and *nu*. We must define the lognormals for each of these, by their mode and fold-change:
 
    ```python
    a.Q_tilde_prior_modes = [100, 1]
@@ -113,14 +122,15 @@ The full list of attributes that one can set are:
 
    C. Non-gaussian process noise requires either using a particle filter (sequential Monte Carlo) or direct integration for the Bayesian integrals, specifically, integrating over the variable *chi*. The preferred method is set with`state_est_method`, which can be set to 'SMC' or 'integrate'. If the evaluation method is 'integrate', then one must set:
 
-   ```
+   ```python
+   a.state_est_method = 'integrate'
    a.chi_interval_width = 8
    a.chi_num_of_subintervals = 400
    ```
 
-   This chooses an integration range whose width is 8x the width of the 95% of the chi values, and which is partitioned into 400 intervals for the Reimann integral. Typically, 8 is a conservative width and one can choose a smaller multiplier (say 2 or 4) without much loss of precision. If the evaluation method is 'SMC', one must set the number of particles for the particle filter using `num_SMC_samples`.  
+   This chooses an integration range whose width is 8x the width of 95% of the chi values, and which is partitioned into 400 intervals to approximate the Reimann integral. Typically, 8 is a conservative width and one can choose a smaller multiplier (say 2 or 4) without much loss of precision. If the evaluation method is 'SMC', one must set the number of particles for the particle filter using `num_SMC_samples` -- typically 300 is fine.  
 
-2. `state_est_all_cores`: boolean. If True, use all available CPU cores in the state estimation, otherwise only run on single core.
+2. `state_est_all_cores`: boolean. If True, use all available CPU cores in the state estimation, otherwise only run on a single core.
 
 3. `do_MCMC`: boolean. If True, use MCMC sampling to get the posterior distributions of the dynamical states; otherwise they are estimated using the Laplace approximation. If True, set the following attributes:
 
@@ -215,5 +225,5 @@ This module contains the `model` class used to define the functions pertaining t
 
    ​	ii) the entries of`Q_tilde.p_name` if the noise is non-Gaussian.
 
-   *The value of each entry of `pdfs_dict` is a single-argument function returning the pdf whose mode is the argument*. In the first part of the code, the mode for all of these priors will be determined by naive curve fitting. This will then define the prior distribution once and for all (all hyperparameters fixed). There are useful helper functions in `src/utils.py` for common distributions -- normal, lognormal, and standard uniform. 
+   *The value of each entry of `pdfs_dict` is a single-argument function returning the pdf whose mode is the argument*. In the first part of the estimation, the mode for all of these priors will be determined by simple curve fitting. This will then define the prior distribution once and for all (all hyperparameters are now fixed). There are useful helper functions in `src/utils.py` for common distributions -- normal, lognormal, and standard uniform. 
 
