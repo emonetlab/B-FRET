@@ -57,7 +57,7 @@ class state_space_model():
 		f_A_params = params[2 + self.a.num_params_f_D: 
 							2 + self.a.num_params_f_D + self.a.num_params_f_A]
 		f_D = self.a.m.f_D.func(self.a.tDD, f_D_params)
-		f_A = self.a.m.f_A.func(self.a.tAA, f_A_params)
+		f_A = self.a.m.f_A.func(self.a.tDD, f_A_params)
 		
 		DT = params[0]
 		AT = params[1]
