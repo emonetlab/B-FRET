@@ -156,8 +156,8 @@ class param_est():
 			return params[-1]*self.a.m.f_A.func(t, params[:-1])
 		f_D_prior_loc = curve_fit(f_D_bleach, self.a.tDD, self.a.IDD, 
 								  p0=f_D_params_init, 
-								  bounds=(f_A_lo_bnd, f_D_hi_bnd))[0]
-		f_A_prior_loc = curve_fit(f_D_bleach, self.a.tAA, self.a.IAA, 
+								  bounds=(f_D_lo_bnd, f_D_hi_bnd))[0]
+		f_A_prior_loc = curve_fit(f_A_bleach, self.a.tAA, self.a.IAA, 
 								  p0=f_A_params_init, 
 								  bounds=(f_A_lo_bnd, f_A_hi_bnd))[0]
 		
