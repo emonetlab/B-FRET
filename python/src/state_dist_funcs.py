@@ -187,7 +187,7 @@ class state_est():
 		AT = p[1]
 		f_A_params = p[2 + self.a.num_params_f_D: 
 				   2 + self.a.num_params_f_D + self.a.num_params_f_A]
-		IAA_pred = AT*self.a.m.f_A.func(self.a.tAA, f_A_params)
+		IAA_pred = AT*self.a.m.f_A.func(self.a.tDD, f_A_params)
 		self.pred['IDD'] = y_pred[:, 0]
 		self.pred['IDA'] = y_pred[:, 1]
 		self.pred['IAA'] = IAA_pred
