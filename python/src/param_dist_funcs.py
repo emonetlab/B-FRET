@@ -3,7 +3,8 @@ from scipy.optimize import curve_fit, minimize
 from autograd import grad, hessian
 import autograd.numpy as np
 from utils import kalman_filter, zeus_mcmc, lognorm_pdf, \
-				  non_Gauss_1D_filtering, diag_gaussian_2d_pdf
+				  non_Gauss_1D_filtering, diag_gaussian_2d_pdf, \
+				  nearest_PD
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -323,7 +324,9 @@ class param_est():
 			dx, p1 = dist['dx'], dist['pred_probs']
 			neg_log_y = -np.sum(np.log(np.sum(dx*p1*LHs, axis=-1)), axis=0)
 		
-		return neg_log_prior + neg_log_IAA + neg_log_y
+		log_post = neg_log_prior + neg_log_IAA + neg_log_y
+		print (log_post)
+		return  log_post
 		
 	def log_posterior(self, log_p):
 		"""
@@ -342,19 +345,40 @@ class param_est():
 		timenow = time.time()
 		with warnings.catch_warnings():
 			warnings.simplefilter('ignore')
+			
+			# Impose bounds for the bleaching parameters as provided by user
+			# Let's keep everything between 1e-8 and 1e8 to avoid overflow
+			nmax = 1e8
+			nmin = 1e-8
+			bounds = np.array([[np.log(nmin), np.log(nmax)]]*self.a.num_params)
+			for i in range(self.a.num_params_f_D):
+				_i = i + 2
+				bounds[_i][0] = np.log(max(self.a.m.f_D.p_lo_bnd[i], nmin))
+				bounds[_i][1] = np.log(min(self.a.m.f_D.p_hi_bnd[i], nmax))
+			for i in range(self.a.num_params_f_A):
+				_i = i + self.a.num_params_f_D + 2
+				bounds[_i][0] = np.log(max(self.a.m.f_A.p_lo_bnd[i], nmin))
+				bounds[_i][1] = np.log(min(self.a.m.f_A.p_hi_bnd[i], nmax))
+			
+			# Minimize using sequential least squares programming
 			res = minimize(self.neg_log_posterior, np.log(self.prior_modes),
-						   options=self.a.anl_params.MAP_opt_options, 
-						   method='SLSQP')
-		
+						   bounds=bounds, method='SLSQP',
+						   options=self.a.anl_params.MAP_opt_options)
+			
 		# Hessian of log posterior is with respect to *log* of parameters.
 		self.MAP_log_hess = hessian(self.neg_log_posterior)(res.x)
 		self.MAP_inv_log_hess = np.linalg.inv(self.MAP_log_hess)
+		eigs = np.linalg.eig(self.MAP_inv_log_hess)[0]
+		if np.any(eigs < 0):
+			self.MAP_inv_log_hess = nearest_PD(self.MAP_inv_log_hess)
+			eigs = np.linalg.eig(self.MAP_inv_log_hess)[0]
 		self.MAP_log_p = res.x
 		self.BIC = 2*res.fun + self.a.num_params*np.log(self.a.num_IDD 
 														+ self.a.num_IDA 
 														+ self.a.num_IAA)
 		print ('Function value: ', res.fun, 'BIC:', self.BIC,  
 			   'Opt success:', res.success, '\n', 'Optimum:', np.exp(res.x))
+		print ('Covariance matrix eigs', eigs)
 		print ('Time elapsed:', time.time() - timenow)
 		
 	def plot_prior_and_post_dists(self):

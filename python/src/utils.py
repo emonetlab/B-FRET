@@ -1,5 +1,6 @@
 import time
 import autograd.numpy as np
+from numpy import linalg as la
 from scipy.stats import norm, lognorm, uniform
 from scipy.integrate import quad, quadrature
 from pathos.multiprocessing import ProcessingPool
@@ -187,7 +188,7 @@ def zeus_mcmc(log_prob, init, num_wkrs, num_samples, burnin=0, all_cores=True,
 				inits = np.random.normal(init, d_init, num_dim)
 			init_tiled[i] = inits
 		samplers = zeus.EnsembleSampler(num_wkrs, num_dim, log_prob,
-				     light_mode=True, check_walkers=False) 
+					 light_mode=True, check_walkers=False) 
 		samplers.run_mcmc(init_tiled, num_samples)
 		samples = samplers.get_chain(flat=True, discard=burnin)
 		
@@ -250,7 +251,7 @@ def non_Gauss_1D_filtering(xs, Q_pdf, LHs, m_0, P_0, t_vec):
 	return dist
 	
 def non_Gauss_1D_smoothing(dist):
-    
+	
 	Q_mat = dist['Q_mat']
 	p_tildes = dist['pred_probs']
 	f_tildes = dist['post_probs']
@@ -278,3 +279,42 @@ def non_Gauss_1D_smoothing(dist):
 	dist['cdfs'] = cdfs[::-1]
 	
 	return dist
+	
+
+def nearest_PD(A):
+	"""
+	Find the nearest positive-definite matrix to input
+	"""
+
+	B = (A + A.T)/2
+	_, s, V = la.svd(B)
+	H = np.dot(V.T, np.dot(np.diag(s), V))
+	A2 = (B + H)/2
+	A3 = (A2 + A2.T)/2
+
+	if is_PD(A3):
+		return A3
+
+	spacing = np.spacing(la.norm(A))
+	I = np.eye(A.shape[0])
+	k = 1
+	
+	while not is_PD(A3):
+		mineig = np.min(np.real(la.eigvals(A3)))
+		A3 += I * (-mineig * k**2 + spacing)
+		k += 1
+
+	return A3
+
+
+def is_PD(B):
+	"""
+	Returns true when input is positive-definite, via Cholesky
+	"""
+	
+	try:
+		la.cholesky(B)
+		return True
+		
+	except la.LinAlgError:
+		return False
