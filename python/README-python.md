@@ -74,10 +74,10 @@ These are the hyperparameters of the inference procedure, and are all defined wi
 ```python
 class anl_params():
 
-	def __init__(a):
+    def __init__(a):
 	
-		a.process_noise = 'Gaussian'
-		a.state_est_all_cores = True
+        a.process_noise = 'Gaussian'
+        a.state_est_all_cores = True
 	
     if a.process_noise == 'Non-Gaussian':
         a.Q_tilde_prior_modes = [100, 1]
@@ -85,11 +85,11 @@ class anl_params():
         a.state_est_method = 'integrate'
         a.chi_interval_width = 8
         a.chi_num_of_subintervals = 400
-	else:
+    else:
         a.sigma_chi_prior_FC = 30
         a.sigma_chi_prior_mode = 100
 		
-	# list further attributes below...
+    # list further attributes below...
 ```
 
 This module is placed in the `EXP_DIR` folder defined above in the main run script.  See the example in the `example/gauss_noise/steps` directory for the general structure. 
